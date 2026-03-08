@@ -1,23 +1,51 @@
-# React + TypeScript + Vite
+# Collaborative Whiteboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A real-time collaborative whiteboard application built with React, TypeScript, Vite, and Supabase. Draw together with others in real-time with persistent storage and secure authentication.
 
-Currently, two official plugins are available:
+## Quick Start
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```bash
+# Install dependencies
+npm install
 
-## React Compiler
+# Set up environment variables
+cp .env.example .env.local
+# Edit .env.local with your Supabase credentials
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+# Start development server
+npm run dev
+```
 
-## Expanding the ESLint configuration
+## Features
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+✨ **Real-time Drawing** - See changes instantly  
+👥 **Collaborative** - Multiple users drawing simultaneously  
+🔐 **Secure Auth** - Supabase authentication  
+💾 **Persistent** - All drawings saved to database  
+📱 **Responsive** - Works on desktop and mobile  
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
+## Setup
+
+See [SETUP.md](./SETUP.md) for detailed setup instructions including:
+- Creating a Supabase project
+- Database schema creation
+- Environment configuration
+- Deployment options
+
+## Stack
+
+- **Frontend**: React 19 + TypeScript + Tailwind CSS
+- **Build**: Vite
+- **Backend**: Supabase (PostgreSQL, Auth, Realtime)
+- **Deployment**: Vercel
+
+## Commands
+
+- `npm run dev` - Start dev server
+- `npm run build` - Build for production
+- `npm run lint` - Run ESLint
+- `npm run preview` - Preview production build
+
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

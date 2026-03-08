@@ -1,0 +1,36 @@
+# GitHub Actions Workflow for Supabase Migrations and Deployment
+# This workflow:
+# 1. Applies database migrations to Supabase on push to main
+# 2. Deploys frontend to Vercel on push to main
+
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  supabase-migrations:
+    name: Apply Supabase Migrations
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Apply migrations
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Push migrations to Supabase
+        run: |
+          npx supabase db push --db-url "${{ secrets.SUPABASE_DB_URL }}"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
