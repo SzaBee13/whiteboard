@@ -19,6 +19,7 @@ const App = () => (
         <Route path="/signup" element={<Signup />} />
         <Route path="/whiteboard" element={<Dashboard />} />
         <Route path="/whiteboard/:id" element={<WhiteboardPage />} />
+        <Route path="/github" element={<Navigate to="https://github.com/SzaBee13/whiteboard" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
