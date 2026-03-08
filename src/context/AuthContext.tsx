@@ -9,6 +9,7 @@ interface AuthContextType {
   loading: boolean
   signUp: (email: string, password: string, displayName?: string) => Promise<void>
   signIn: (email: string, password: string) => Promise<void>
+  signInWithProvider: (provider: 'google' | 'github' | 'discord') => Promise<void>
   signOut: () => Promise<void>
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>
 }
@@ -82,6 +83,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) throw error
   }
 
+  const signInWithProvider = async (provider: 'google' | 'github' | 'discord') => {
+    if (!supabase) throw new Error('Supabase not configured')
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/whiteboard`,
+      },
+    })
+    if (error) throw error
+  }
+
   const signOut = async () => {
     if (!supabase) throw new Error('Supabase not configured')
     const { error } = await supabase.auth.signOut()
@@ -99,7 +111,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   return (
-    <AuthContext.Provider value={{ session, userProfile, loading, signUp, signIn, signOut, updateProfile }}>
+    <AuthContext.Provider
+      value={{ session, userProfile, loading, signUp, signIn, signInWithProvider, signOut, updateProfile }}
+    >
       {children}
     </AuthContext.Provider>
   )
