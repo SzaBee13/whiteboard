@@ -6,32 +6,53 @@ import type { Whiteboard } from '../types'
 import ProfileSettings from '../components/ProfileSettings'
 
 export default function Dashboard() {
-  const { session, signOut } = useAuth()
+  const { session, loading: authLoading, signOut } = useAuth()
   const navigate = useNavigate()
   const [whiteboards, setWhiteboards] = useState<Whiteboard[]>([])
   const [title, setTitle] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (authLoading) {
+      return
+    }
+
     if (!session) {
       navigate('/login')
       return
     }
 
     loadWhiteboards()
-  }, [session])
+  }, [session, authLoading, navigate])
 
   const loadWhiteboards = async () => {
-    if (!supabase || !session) return
+    if (!session) {
+      setLoading(false)
+      return
+    }
 
-    const { data } = await supabase
-      .from('whiteboards')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .order('created_at', { ascending: false })
+    if (!supabase) {
+      setWhiteboards([])
+      setLoading(false)
+      return
+    }
 
-    setWhiteboards(data || [])
-    setLoading(false)
+    try {
+      const { data, error } = await supabase
+        .from('whiteboards')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Failed to load whiteboards:', error)
+        setWhiteboards([])
+      } else {
+        setWhiteboards(data || [])
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleCreateWhiteboard = async (e: React.FormEvent) => {
@@ -96,7 +117,8 @@ export default function Dashboard() {
           <ProfileSettings />
         </div>
 
-        <div className="mb-8 rounded-lg bg-white p-6 shadow-lg">\n          <h2 className="mb-4 text-xl font-bold text-gray-800">Create New Whiteboard</h2>
+        <div className="mb-8 rounded-lg bg-white p-6 shadow-lg">
+          <h2 className="mb-4 text-xl font-bold text-gray-800">Create New Whiteboard</h2>
           <form onSubmit={handleCreateWhiteboard} className="flex gap-2">
             <input
               type="text"
