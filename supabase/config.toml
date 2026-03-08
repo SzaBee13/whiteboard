@@ -1,12 +1,6 @@
 # Supabase Project Configuration
 # https://supabase.com/docs/guides/cli/local-development
 
-[project]
-# Project name
-name = "whiteboard"
-# Organization ID (optional)
-# organization_id = ""
-
 [api]
 # Port to use for Supabase API
 port = 54321
@@ -51,8 +45,3 @@ jwt_expiry = 3600
 enable_signup = true
 # Allow/disallow testing manual OTP code
 enable_manual_linking = false
-# Configure one of the supported providers: 'apple' / 'azure' / 'bitbucket' / 'discord' / 'facebook' /
-# 'figma' / 'github' / 'gitlab' / 'google' / 'kakao' / 'keycloak' / 'linkedin' / 'linkedin_oidc' /
-# 'notion' / 'twitch' / 'twitter' / 'workos' / 'zoom'
-# You must enable the OAuth provider / application if you want to use it.
-external_oauth_providers = []
