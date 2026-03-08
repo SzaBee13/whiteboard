@@ -1,19 +1,23 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import type { UserProfile } from '../types'
 
 interface AuthContextType {
   session: Session | null
+  userProfile: UserProfile | null
   loading: boolean
-  signUp: (email: string, password: string) => Promise<void>
+  signUp: (email: string, password: string, displayName?: string) => Promise<void>
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
+  updateProfile: (updates: Partial<UserProfile>) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -23,24 +27,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     // Check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session)
+      if (session?.user) {
+        await loadUserProfile(session.user.id)
+      }
       setLoading(false)
     })
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session)
+      if (session?.user) {
+        await loadUserProfile(session.user.id)
+      } else {
+        setUserProfile(null)
+      }
     })
 
     return () => subscription?.unsubscribe()
   }, [])
 
-  const signUp = async (email: string, password: string) => {
+  const loadUserProfile = async (userId: string) => {
+    if (!supabase) return
+    const { data } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', userId)
+      .single()
+    if (data) {
+      setUserProfile(data)
+    }
+  }
+
+  const signUp = async (email: string, password: string, displayName?: string) => {
     if (!supabase) throw new Error('Supabase not configured')
-    const { error } = await supabase.auth.signUp({ email, password })
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          display_name: displayName || email.split('@')[0],
+        },
+      },
+    })
     if (error) throw error
   }
 
@@ -56,8 +88,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) throw error
   }
 
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!supabase || !session?.user) throw new Error('Not authenticated')
+    const { error } = await supabase
+      .from('user_profiles')
+      .update(updates)
+      .eq('id', session.user.id)
+    if (error) throw error
+    await loadUserProfile(session.user.id)
+  }
+
   return (
-    <AuthContext.Provider value={{ session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, userProfile, loading, signUp, signIn, signOut, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )

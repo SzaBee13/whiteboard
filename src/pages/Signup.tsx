@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 
 export default function Signup() {
   const [email, setEmail] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
@@ -23,7 +24,7 @@ export default function Signup() {
     setLoading(true)
 
     try {
-      await signUp(email, password)
+      await signUp(email, password, displayName || undefined)
       navigate('/login?message=Check your email to confirm your account')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Signup failed')
@@ -46,6 +47,18 @@ export default function Signup() {
               onChange={(e) => setEmail(e.target.value)}
               className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Display Name</label>
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="How you'll appear to others (optional)"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+              maxLength={50}
             />
           </div>
 

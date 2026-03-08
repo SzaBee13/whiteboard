@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import type { Whiteboard } from '../types'
+import ProfileSettings from '../components/ProfileSettings'
 
 export default function Dashboard() {
   const { session, signOut } = useAuth()
@@ -90,8 +91,12 @@ export default function Dashboard() {
           </button>
         </div>
 
-        <div className="mb-8 rounded-lg bg-white p-6 shadow-lg">
-          <h2 className="mb-4 text-xl font-bold text-gray-800">Create New Whiteboard</h2>
+        {/* Profile Settings */}
+        <div className="mb-8">
+          <ProfileSettings />
+        </div>
+
+        <div className="mb-8 rounded-lg bg-white p-6 shadow-lg">\n          <h2 className="mb-4 text-xl font-bold text-gray-800">Create New Whiteboard</h2>
           <form onSubmit={handleCreateWhiteboard} className="flex gap-2">
             <input
               type="text"
