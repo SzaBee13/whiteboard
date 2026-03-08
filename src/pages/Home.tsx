@@ -16,33 +16,31 @@ function Home() {
           <h1 className="text-2xl font-bold text-white">Whiteboard</h1>
         </div>
         
-        {!loading && (
-          <div className="flex gap-3">
-            {session ? (
+        <div className="flex gap-3">
+          {session ? (
+            <Link
+              to="/whiteboard"
+              className="rounded-lg bg-white px-6 py-2.5 font-semibold text-purple-600 shadow-lg transition hover:bg-gray-100"
+            >
+              Go to Dashboard
+            </Link>
+          ) : (
+            <>
               <Link
-                to="/whiteboard"
+                to="/login"
+                className="rounded-lg border-2 border-white px-6 py-2.5 font-semibold text-white transition hover:bg-white/10"
+              >
+                {loading ? 'Sign In' : 'Sign In'}
+              </Link>
+              <Link
+                to="/signup"
                 className="rounded-lg bg-white px-6 py-2.5 font-semibold text-purple-600 shadow-lg transition hover:bg-gray-100"
               >
-                Go to Dashboard
+                Get Started
               </Link>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="rounded-lg border-2 border-white px-6 py-2.5 font-semibold text-white transition hover:bg-white/10"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/signup"
-                  className="rounded-lg bg-white px-6 py-2.5 font-semibold text-purple-600 shadow-lg transition hover:bg-gray-100"
-                >
-                  Get Started
-                </Link>
-              </>
-            )}
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </nav>
 
       {/* Hero Section */}
