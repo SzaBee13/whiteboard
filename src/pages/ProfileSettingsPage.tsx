@@ -86,6 +86,15 @@ export default function ProfileSettingsPage() {
     )
   }
 
+  useEffect(() => {
+    if (!userProfile) return
+
+    setDisplayName(userProfile.display_name)
+    setUsername(userProfile.username)
+    setAvatarUrl(userProfile.avatar_url ?? '')
+    setBio(userProfile.bio ?? '')
+  }, [userProfile])
+
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-500 to-purple-600">
       <div className="mx-auto max-w-2xl px-4 py-8">

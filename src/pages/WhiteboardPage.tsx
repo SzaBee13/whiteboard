@@ -282,18 +282,8 @@ export default function WhiteboardPage() {
 
       {isOwner && (
         <>
-          <div className="fixed left-4 top-4 z-20">
-            <button
-              type="button"
-              onClick={() => setShowBoardManager((current) => !current)}
-              className="rounded-lg bg-white/95 px-4 py-2 text-sm font-semibold text-gray-900 shadow-lg backdrop-blur hover:bg-white"
-            >
-              {showBoardManager ? 'Close board manager' : 'Board manager'}
-            </button>
-          </div>
-
           {showBoardManager && (
-            <div className="fixed left-4 top-16 z-20 w-[calc(100%-2rem)] max-w-lg rounded-xl border border-gray-200 bg-white/95 p-4 shadow-lg backdrop-blur">
+            <div className="fixed bottom-20 right-4 z-20 w-[calc(100%-2rem)] max-w-lg rounded-xl border border-gray-200 bg-white/95 p-4 shadow-lg backdrop-blur">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-bold text-gray-900">Board Settings</h2>
@@ -374,7 +364,16 @@ export default function WhiteboardPage() {
         </>
       )}
 
-      <div className="fixed bottom-4 right-4 z-20 flex gap-2">
+      <div className="fixed bottom-4 right-4 z-20 flex flex-wrap justify-end gap-2">
+        {isOwner && (
+          <button
+            type="button"
+            onClick={() => setShowBoardManager((current) => !current)}
+            className="rounded bg-white px-4 py-2 font-semibold text-gray-900 shadow hover:bg-gray-100"
+          >
+            {showBoardManager ? 'Close board manager' : 'Board manager'}
+          </button>
+        )}
         <Link
           to="/profile"
           className="rounded bg-indigo-700 px-4 py-2 font-semibold text-white hover:bg-indigo-800"
