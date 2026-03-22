@@ -3,7 +3,7 @@
 # 1. Applies database migrations to Supabase on push to main
 # 2. Deploys frontend to Vercel on push to main
 
-name: Deploy
+name: Deploy Supabase
 
 on:
   push:

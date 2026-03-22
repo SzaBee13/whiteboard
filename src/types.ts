@@ -29,11 +29,22 @@ export interface User {
 
 export interface UserProfile {
   id: string
+  username: string
   display_name: string
+  bio: string
   avatar_url: string | null
   avatar_color: string
   created_at: string
   updated_at: string
+}
+
+export interface WhiteboardMember {
+  id: string
+  whiteboard_id: string
+  user_id: string
+  invited_by: string
+  created_at: string
+  user_profile?: Pick<UserProfile, 'id' | 'username' | 'display_name' | 'avatar_url' | 'avatar_color'>
 }
 
 export interface CursorPresence {

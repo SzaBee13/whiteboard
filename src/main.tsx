@@ -9,6 +9,7 @@ import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import WhiteboardPage from './pages/WhiteboardPage'
 import Home from './pages/Home'
+import ProfileSettingsPage from './pages/ProfileSettingsPage'
 
 // eslint-disable-next-line react-refresh/only-export-components
 const App = () => (
@@ -21,6 +22,7 @@ const App = () => (
         <Route path="/whiteboard" element={<Dashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/whiteboard/:id" element={<WhiteboardPage />} />
+        <Route path="/profile" element={<ProfileSettingsPage />} />
         <Route path="/github" element={<Navigate to="https://github.com/SzaBee13/whiteboard" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -7,9 +7,10 @@ import { useAuth } from '../context/AuthContext'
 interface CanvasProps {
   whiteboardId: string
   userId: string
+  canManageBoard: boolean
 }
 
-export default function Canvas({ whiteboardId, userId }: CanvasProps) {
+export default function Canvas({ whiteboardId, userId, canManageBoard }: CanvasProps) {
   const { userProfile } = useAuth()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -22,40 +23,6 @@ export default function Canvas({ whiteboardId, userId }: CanvasProps) {
   const [filled, setFilled] = useState(false)
   const [strokes, setStrokes] = useState<DrawingStroke[]>([])
   const [cursors, setCursors] = useState<Map<string, CursorPresence>>(new Map())
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas || !supabase) return
-
-    // Load existing strokes
-    loadInitialStrokes()
-
-    // Subscribe to new strokes
-    const channel = supabase
-      .channel(`whiteboard:${whiteboardId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'drawing_strokes',
-          filter: `whiteboard_id=eq.${whiteboardId}`,
-        },
-        (payload) => {
-          const stroke = payload.new as DrawingStroke
-          setStrokes((prev) => {
-            const newStrokes = [...prev, stroke]
-            redrawCanvas(newStrokes)
-            return newStrokes
-          })
-        }
-      )
-      .subscribe()
-
-    return () => {
-      channel.unsubscribe()
-    }
-  }, [whiteboardId])
 
   // Cursor presence tracking
   useEffect(() => {
@@ -117,22 +84,7 @@ export default function Canvas({ whiteboardId, userId }: CanvasProps) {
     })
   }
 
-  const loadInitialStrokes = async () => {
-    if (!supabase) return
-
-    const { data } = await supabase
-      .from('drawing_strokes')
-      .select('*')
-      .eq('whiteboard_id', whiteboardId)
-      .order('timestamp', { ascending: true })
-
-    if (data) {
-      setStrokes(data)
-      redrawCanvas(data)
-    }
-  }
-
-  const redrawCanvas = (strokeList: DrawingStroke[]) => {
+  function redrawCanvas(strokeList: DrawingStroke[]) {
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -145,7 +97,7 @@ export default function Canvas({ whiteboardId, userId }: CanvasProps) {
     })
   }
 
-  const drawStroke = (ctx: CanvasRenderingContext2D, stroke: DrawingStroke) => {
+  function drawStroke(ctx: CanvasRenderingContext2D, stroke: DrawingStroke) {
     if (stroke.points.length === 0) return
 
     ctx.strokeStyle = stroke.tool === 'eraser' ? '#ffffff' : stroke.color
@@ -191,6 +143,52 @@ export default function Canvas({ whiteboardId, userId }: CanvasProps) {
       ctx.stroke()
     }
   }
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !supabase) return
+
+    let isActive = true
+
+    // Load existing strokes
+    void supabase
+      .from('drawing_strokes')
+      .select('*')
+      .eq('whiteboard_id', whiteboardId)
+      .order('timestamp', { ascending: true })
+      .then(({ data }) => {
+        if (!isActive || !data) return
+        setStrokes(data)
+        redrawCanvas(data)
+      })
+
+    // Subscribe to new strokes
+    const channel = supabase
+      .channel(`whiteboard:${whiteboardId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'drawing_strokes',
+          filter: `whiteboard_id=eq.${whiteboardId}`,
+        },
+        (payload) => {
+          const stroke = payload.new as DrawingStroke
+          setStrokes((prev) => {
+            const newStrokes = [...prev, stroke]
+            redrawCanvas(newStrokes)
+            return newStrokes
+          })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      isActive = false
+      channel.unsubscribe()
+    }
+  }, [whiteboardId])
 
   const handleMouseDown = (e: React.MouseEvent) => {
     const canvas = canvasRef.current
@@ -500,13 +498,15 @@ export default function Canvas({ whiteboardId, userId }: CanvasProps) {
             ↶
           </button>
           
-          <button
-            onClick={clearCanvas}
-            className="rounded bg-red-500 px-3 py-2 font-semibold text-white hover:bg-red-600"
-            title="Clear All"
-          >
-            Clear
-          </button>
+          {canManageBoard && (
+            <button
+              onClick={clearCanvas}
+              className="rounded bg-red-500 px-3 py-2 font-semibold text-white hover:bg-red-600"
+              title="Clear All"
+            >
+              Clear
+            </button>
+          )}
         </div>
       </div>
 
