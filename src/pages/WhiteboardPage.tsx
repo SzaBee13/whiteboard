@@ -20,6 +20,7 @@ export default function WhiteboardPage() {
   const [settingsMessage, setSettingsMessage] = useState<string | null>(null)
   const [savingVisibility, setSavingVisibility] = useState(false)
   const [inviting, setInviting] = useState(false)
+  const [showBoardManager, setShowBoardManager] = useState(false)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -110,6 +111,12 @@ export default function WhiteboardPage() {
   }, [id, session, navigate, loadWhiteboard])
 
   const isOwner = Boolean(session?.user.id && whiteboard?.user_id && session.user.id === whiteboard.user_id)
+
+  useEffect(() => {
+    if (!isOwner) {
+      setShowBoardManager(false)
+    }
+  }, [isOwner])
 
   useEffect(() => {
     if (!isOwner || !whiteboard || whiteboard.is_public) {
@@ -274,72 +281,97 @@ export default function WhiteboardPage() {
       />
 
       {isOwner && (
-        <div className="fixed left-4 top-4 z-20 w-full max-w-lg rounded-xl border border-gray-200 bg-white/95 p-4 shadow-lg backdrop-blur">
-          <h2 className="text-lg font-bold text-gray-900">Board Settings</h2>
-          <p className="text-sm text-gray-600">Set board visibility and manage private invites.</p>
-
-          <div className="mt-3 flex items-center gap-2">
-            <label htmlFor="visibility" className="text-sm font-semibold text-gray-700">Visibility</label>
-            <select
-              id="visibility"
-              value={whiteboard.is_public ? 'public' : 'private'}
-              disabled={savingVisibility}
-              onChange={(event) => void updateBoardVisibility(event.target.value === 'public')}
-              className="rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
+        <>
+          <div className="fixed left-4 top-4 z-20">
+            <button
+              type="button"
+              onClick={() => setShowBoardManager((current) => !current)}
+              className="rounded-lg bg-white/95 px-4 py-2 text-sm font-semibold text-gray-900 shadow-lg backdrop-blur hover:bg-white"
             >
-              <option value="public">Public: any signed-in user can edit</option>
-              <option value="private">Private: invited usernames only</option>
-            </select>
+              {showBoardManager ? 'Close board manager' : 'Board manager'}
+            </button>
           </div>
 
-          {!whiteboard.is_public && (
-            <>
-              <form onSubmit={handleInvite} className="mt-4 flex gap-2">
-                <input
-                  type="text"
-                  value={inviteUsername}
-                  onChange={(event) => setInviteUsername(event.target.value.toLowerCase())}
-                  placeholder="Type username to invite"
-                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-                  maxLength={30}
-                />
+          {showBoardManager && (
+            <div className="fixed left-4 top-16 z-20 w-[calc(100%-2rem)] max-w-lg rounded-xl border border-gray-200 bg-white/95 p-4 shadow-lg backdrop-blur">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Board Settings</h2>
+                  <p className="text-sm text-gray-600">Set board visibility and manage private invites.</p>
+                </div>
                 <button
-                  type="submit"
-                  disabled={inviting}
-                  className="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+                  type="button"
+                  onClick={() => setShowBoardManager(false)}
+                  className="rounded bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-200"
                 >
-                  {inviting ? 'Inviting...' : 'Invite'}
+                  Close
                 </button>
-              </form>
-
-              <div className="mt-3 max-h-40 overflow-y-auto rounded border border-gray-200">
-                {members.length === 0 && (
-                  <p className="px-3 py-2 text-sm text-gray-500">No invited members yet.</p>
-                )}
-                {members.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between border-b border-gray-100 px-3 py-2 last:border-b-0">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {member.user_profile?.display_name ?? 'Unknown User'}
-                      </p>
-                      <p className="text-xs text-gray-500">@{member.user_profile?.username ?? 'unknown'}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => void handleRemoveInvite(member)}
-                      className="rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-200"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
               </div>
-            </>
-          )}
 
-          {inviteError && <p className="mt-3 rounded bg-red-100 px-3 py-2 text-sm text-red-700">{inviteError}</p>}
-          {settingsMessage && <p className="mt-3 rounded bg-green-100 px-3 py-2 text-sm text-green-700">{settingsMessage}</p>}
-        </div>
+              <div className="mt-3 flex items-center gap-2">
+                <label htmlFor="visibility" className="text-sm font-semibold text-gray-700">Visibility</label>
+                <select
+                  id="visibility"
+                  value={whiteboard.is_public ? 'public' : 'private'}
+                  disabled={savingVisibility}
+                  onChange={(event) => void updateBoardVisibility(event.target.value === 'public')}
+                  className="rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
+                >
+                  <option value="public">Public: any signed-in user can edit</option>
+                  <option value="private">Private: invited usernames only</option>
+                </select>
+              </div>
+
+              {!whiteboard.is_public && (
+                <>
+                  <form onSubmit={handleInvite} className="mt-4 flex gap-2">
+                    <input
+                      type="text"
+                      value={inviteUsername}
+                      onChange={(event) => setInviteUsername(event.target.value.toLowerCase())}
+                      placeholder="Type username to invite"
+                      className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                      maxLength={30}
+                    />
+                    <button
+                      type="submit"
+                      disabled={inviting}
+                      className="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+                    >
+                      {inviting ? 'Inviting...' : 'Invite'}
+                    </button>
+                  </form>
+
+                  <div className="mt-3 max-h-40 overflow-y-auto rounded border border-gray-200">
+                    {members.length === 0 && (
+                      <p className="px-3 py-2 text-sm text-gray-500">No invited members yet.</p>
+                    )}
+                    {members.map((member) => (
+                      <div key={member.id} className="flex items-center justify-between border-b border-gray-100 px-3 py-2 last:border-b-0">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {member.user_profile?.display_name ?? 'Unknown User'}
+                          </p>
+                          <p className="text-xs text-gray-500">@{member.user_profile?.username ?? 'unknown'}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void handleRemoveInvite(member)}
+                          className="rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-200"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {inviteError && <p className="mt-3 rounded bg-red-100 px-3 py-2 text-sm text-red-700">{inviteError}</p>}
+              {settingsMessage && <p className="mt-3 rounded bg-green-100 px-3 py-2 text-sm text-green-700">{settingsMessage}</p>}
+            </div>
+          )}
+        </>
       )}
 
       <div className="fixed bottom-4 right-4 z-20 flex gap-2">
