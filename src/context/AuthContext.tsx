@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import type { UserProfile } from '../types'
@@ -19,49 +19,96 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(isSupabaseConfigured)
+
+  const withTimeout = async <T,>(promise: PromiseLike<T>, ms: number): Promise<T> => {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((_, reject) => {
+        setTimeout(() => reject(new Error('Request timed out. Please try again.')), ms)
+      }),
+    ])
+  }
+
+  const loadUserProfile = useCallback(async (userId: string) => {
+    if (!supabase) return
+    try {
+      const { data, error } = await withTimeout(
+        supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', userId)
+          .single(),
+        10000,
+      )
+
+      if (error) {
+        console.error('Failed to load user profile:', error)
+        setUserProfile(null)
+        return
+      }
+
+      if (data) {
+        setUserProfile(data)
+      } else {
+        setUserProfile(null)
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error)
+      setUserProfile(null)
+    }
+  }, [])
 
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) {
-      setLoading(false)
-      return
+    if (!isSupabaseConfigured || !supabase) return
+    const client = supabase
+
+    let isMounted = true
+
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await withTimeout(client.auth.getSession(), 10000)
+
+        if (!isMounted) return
+
+        setSession(session)
+        setLoading(false)
+
+        if (session?.user) {
+          void loadUserProfile(session.user.id)
+        }
+      } catch (err) {
+        if (!isMounted) return
+        console.error('Auth session initialization failed:', err)
+        setSession(null)
+        setUserProfile(null)
+        setLoading(false)
+      }
     }
 
-    // Check current session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session)
-      if (session?.user) {
-        await loadUserProfile(session.user.id)
-      }
-      setLoading(false)
-    })
+    void initializeAuth()
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = client.auth.onAuthStateChange(async (_event, session) => {
+      if (!isMounted) return
+
       setSession(session)
+      setLoading(false)
+
       if (session?.user) {
-        await loadUserProfile(session.user.id)
+        void loadUserProfile(session.user.id)
       } else {
         setUserProfile(null)
       }
     })
 
-    return () => subscription?.unsubscribe()
-  }, [])
-
-  const loadUserProfile = async (userId: string) => {
-    if (!supabase) return
-    const { data } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    if (data) {
-      setUserProfile(data)
+    return () => {
+      isMounted = false
+      subscription?.unsubscribe()
     }
-  }
+  }, [loadUserProfile])
 
   const signUp = async (email: string, password: string, displayName?: string) => {
     if (!supabase) throw new Error('Supabase not configured')
@@ -119,6 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (context === undefined) {

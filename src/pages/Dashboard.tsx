@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -11,21 +11,21 @@ export default function Dashboard() {
   const [whiteboards, setWhiteboards] = useState<Whiteboard[]>([])
   const [title, setTitle] = useState('')
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (authLoading) {
-      return
-    }
+  const withTimeout = async <T,>(promise: PromiseLike<T>, ms: number): Promise<T> => {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((_, reject) => {
+        setTimeout(() => reject(new Error('Request timed out. Please try again.')), ms)
+      }),
+    ])
+  }
 
-    if (!session) {
-      navigate('/login')
-      return
-    }
+  const loadWhiteboards = useCallback(async () => {
+    setLoading(true)
+    setLoadError(null)
 
-    loadWhiteboards()
-  }, [session, authLoading, navigate])
-
-  const loadWhiteboards = async () => {
     if (!session) {
       setLoading(false)
       return
@@ -33,27 +33,47 @@ export default function Dashboard() {
 
     if (!supabase) {
       setWhiteboards([])
+      setLoadError('Supabase is not configured.')
       setLoading(false)
       return
     }
 
     try {
-      const { data, error } = await supabase
-        .from('whiteboards')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false })
+      const { data, error } = await withTimeout(
+        supabase
+          .from('whiteboards')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false }),
+        10000,
+      )
 
       if (error) {
         console.error('Failed to load whiteboards:', error)
+        setLoadError(error.message || 'Failed to load whiteboards.')
         setWhiteboards([])
       } else {
         setWhiteboards(data || [])
       }
+    } catch (err) {
+      console.error('Exception loading whiteboards:', err)
+      setLoadError(err instanceof Error ? err.message : 'Failed to load whiteboards.')
+      setWhiteboards([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [session])
+
+  useEffect(() => {
+    if (authLoading) return
+
+    if (!session) {
+      navigate('/login')
+      return
+    }
+
+    loadWhiteboards()
+  }, [session, authLoading, navigate, loadWhiteboards])
 
   const handleCreateWhiteboard = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -136,6 +156,18 @@ export default function Dashboard() {
             </button>
           </form>
         </div>
+
+        {loadError && (
+          <div className="mb-6 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+            <p>{loadError}</p>
+            <button
+              onClick={() => loadWhiteboards()}
+              className="rounded bg-red-600 px-3 py-1 text-sm font-semibold text-white hover:bg-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {whiteboards.map((board) => (

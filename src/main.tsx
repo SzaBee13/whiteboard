@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard'
 import WhiteboardPage from './pages/WhiteboardPage'
 import Home from './pages/Home'
 
+// eslint-disable-next-line react-refresh/only-export-components
 const App = () => (
   <AuthProvider>
     <BrowserRouter>

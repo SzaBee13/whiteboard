@@ -33,3 +33,4 @@ dist-ssr
 supabase/.branches
 supabase/.temp
 .supabase
+.vercel
